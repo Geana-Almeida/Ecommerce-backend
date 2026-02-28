@@ -1,0 +1,16 @@
+services:
+  ecommerce-db:
+    image: postgres:16
+    container_name: ecommerce-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ecommerce-hortifruti
+      POSTGRES_USER: ecommerce
+      POSTGRES_PASSWORD: ecommerce
+    volumes:
+      - ecommerce_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  ecommerce_pgdata:
