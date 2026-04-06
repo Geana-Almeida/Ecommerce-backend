@@ -1,9 +1,9 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { HashingServiceProtocol } from 'src/auth/hash/hashing.service';
-import { PayloadTokenDto } from 'src/auth/dto/payload-token.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { HashingServiceProtocol } from '../auth/hash/hashing.service';
+import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
 
 @Injectable()
 export class UsersService {
@@ -49,8 +49,22 @@ export class UsersService {
     }
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findAll() {
+    try{
+      const user = await this.prisma.users.findMany({
+        where:{
+          status: true
+        }
+      })
+
+      return user
+    }catch(error){
+      if(error instanceof HttpException){
+        throw error;
+      }
+
+      throw new HttpException("Erro ao atuazar usuário", 500)
+    }
   }
 
   findOne(id: string) {
@@ -64,6 +78,7 @@ export class UsersService {
           id: id
         }
       })
+
 
       if(!user){
         throw new HttpException("Usuário não encontrado", 404)
@@ -86,10 +101,15 @@ export class UsersService {
         where: {
           id: id
         },
-        data
+        data: data,
+        select: {
+          email: true,
+          name: true,
+          status: true
+        }
       })
 
-      
+      return updateUser
     }catch(error){
       if(error instanceof HttpException){
         throw error;

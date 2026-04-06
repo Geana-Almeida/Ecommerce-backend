@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { TokenExpiredError } from '@nestjs/jwt';
-import { TokenPayLoadParam } from 'src/auth/param/token-payload-param';
-import { PayloadTokenDto } from 'src/auth/dto/payload-token.dto';
+import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
+import { TokenPayLoadParam } from '../auth/param/token-payload-param';
+import { AuthTokenGuard } from '../auth/guard/auth.token.guard';
+
 
 @Controller('users')
 export class UsersController {
@@ -25,7 +27,9 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  
   @Patch(':id')
+  @UseGuards(AuthTokenGuard)
   update(
     @Param('id') id: string, 
     @Body() updateUserDto: UpdateUserDto,

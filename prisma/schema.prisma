@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,14 +7,108 @@ datasource db {
 }
 
 model Users {
-  id    String     @id @default(uuid()) 
+  id    String  @id @default(uuid()) 
   email String  @unique
   name  String?
   passwordHash String @map("passaword_hash")
-  status      Boolean @default(true)
+  status Boolean @default(true)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
+  orders Order[]
+
   @@map("users")
+}
+
+model Category {
+  id    String  @id @default(uuid())
+  name  String  @unique
+  slug  String  @unique
+
+  products Product[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Int      // em centavos
+  stock       Int
+  active      Boolean  @default(true)
+
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  imageUrl    String?
+
+  orderItems OrderItem[]
+
+  // Stripe
+  stripeProductId String?
+  stripePriceId   String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([categoryId])
+  @@map("products")
+}
+
+model Order {
+  id        String   @id @default(uuid())
+  userId    String
+  user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status    OrderStatus @default(PENDING)
+  total     Int // sempre calculado no backend
+
+  stripeSessionId String?
+
+  // preparação para entrega futura
+  deliveryAddress String?
+  deliveryFee     Int?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  items OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  quantity  Int
+  price     Int // preço no momento da compra
+
+  // snapshot (histórico)
+  name      String
+  imageUrl  String?
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELED
+  FAILED
+  EXPIRED
 }
