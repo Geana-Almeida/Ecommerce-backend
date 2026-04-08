@@ -5,6 +5,7 @@ import {
   IsUUID,
   Min,
 } from 'class-validator';
+import { Type } from 'class-transformer'
 
 export class CreateProductDto {
   @IsString()
@@ -14,10 +15,12 @@ export class CreateProductDto {
   @IsString()
   description?: string;
 
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   price!: number; // centavos
 
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   stock!: number;
