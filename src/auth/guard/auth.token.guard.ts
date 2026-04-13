@@ -43,6 +43,7 @@ async canActivate(context: ExecutionContext): Promise<boolean> {
       throw new UnauthorizedException("Usuário inativo.");
     }
 
+    request.user = user;
     request[REQUEST_TOKEN_PAYLOAD_NAME] = payload;
 
     return true;

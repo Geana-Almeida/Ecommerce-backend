@@ -14,7 +14,9 @@ export class UploadService {
     });
   }
 
-  async uploadFile(file: Express.Multer.File) {
+  async uploadFile(file: Express.Multer.File, adminId) {
+    
+
     const response = await this.imagekit.upload({
       file: file.buffer,
       fileName: file.originalname,

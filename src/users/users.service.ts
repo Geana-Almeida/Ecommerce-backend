@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -67,8 +67,33 @@ export class UsersService {
     }
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} user`;
+  async findOne(id: string) {
+    try {
+      const user = await this.prisma.users.findUnique({
+        where: {
+          id: id
+        },
+        select:{
+          id: true,
+          name: true,
+          email: true,
+          status: true
+        }
+      })
+
+      if(!user){
+        throw new HttpException("Usuário não encontrado", 404)
+      }
+
+
+      return user
+    } catch (error) {
+      if(error instanceof HttpException){
+        throw error
+      }
+
+      throw new HttpException("Erro interno servidor", 500)
+    }
   }
 
   async update(id: string, updateUserDto: UpdateUserDto, tokenPayLoad: PayloadTokenDto) {
@@ -119,7 +144,26 @@ export class UsersService {
     }
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} user`;
+  async updateStatus(
+  userId: string,
+  status: boolean,
+  adminId: string,
+) {
+  const user = await this.prisma.users.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new NotFoundException('Usuário não encontrado');
   }
+
+  return this.prisma.users.update({
+    where: { id: userId },
+    data: {
+      status,
+      deactivatedAt: status ? null : new Date(),
+      deactivatedBy: status ? null : adminId,
+    },
+  });
+}
 }

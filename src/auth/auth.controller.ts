@@ -9,7 +9,6 @@ export class AuthController {
 
   @Post()
   signIn(@Body() signInDto: SignInDto){
-    console.log(signInDto);
     return this.authService.authenticate(signInDto);
   }
 }

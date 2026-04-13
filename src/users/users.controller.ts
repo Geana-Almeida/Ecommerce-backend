@@ -1,12 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseGuards, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { TokenExpiredError } from '@nestjs/jwt';
 import { PayloadTokenDto } from '../auth/dto/payload-token.dto';
 import { TokenPayLoadParam } from '../auth/param/token-payload-param';
 import { AuthTokenGuard } from '../auth/guard/auth.token.guard';
+import { UpdateUserStatusDto } from './dto/update-user-status.dto';
+import { RolesGuard } from '../auth/guard/roles.guard';
+import { Role } from '@prisma/client';
+import { Roles } from '../auth/decorators/roles.decorator';
+import type { Request } from 'express';
+import { Users } from '@prisma/client';
 
+type AuthRequest = Request & {
+  user: Users;
+};
 
 @Controller('users')
 export class UsersController {
@@ -17,8 +25,12 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
+  @UseGuards(AuthTokenGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Get()
-  findAll() {
+  findAll(
+    @Req() req: Request,
+  ) {
     return this.usersService.findAll();
   }
 
@@ -38,8 +50,21 @@ export class UsersController {
     return this.usersService.update(id, updateUserDto, tokenPayLoad);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
-  }
+  @UseGuards(AuthTokenGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Patch('status/:id')
+  updateStatus(
+  @Param('id') id: string,
+  @Body() body: UpdateUserStatusDto,
+  @Req() req: Request,
+) {
+  const adminId = req.user!.id;
+
+  return this.usersService.updateStatus(
+    id,
+    body.status,
+    adminId,
+  );
+}
+
 }

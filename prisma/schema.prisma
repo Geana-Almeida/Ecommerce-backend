@@ -13,6 +13,11 @@ model Users {
   passwordHash String @map("passaword_hash")
   status Boolean @default(true)
 
+  role Role @default(USER)
+
+  deactivatedAt DateTime?
+  deactivatedBy String?
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -111,4 +116,9 @@ enum OrderStatus {
   CANCELED
   FAILED
   EXPIRED
+}
+
+enum Role {
+  USER
+  ADMIN
 }

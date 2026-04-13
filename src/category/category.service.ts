@@ -1,4 +1,5 @@
 import {
+  HttpException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -13,44 +14,73 @@ export class CategoryService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: CreateCategoryDto): Promise<Category> {
-    return this.prisma.category.create({
-      data,
-    });
+    try {
+      return await this.prisma.category.create({
+        data,
+      });
+    } catch (error) {
+      throw new HttpException('Erro ao criar categoria', 500);
+    }
   }
 
   async findAll(): Promise<Category[]> {
-    return this.prisma.category.findMany();
+    try {
+      return await this.prisma.category.findMany();
+    } catch (error) {
+      throw new HttpException('Erro ao buscar categorias', 500);
+    }
   }
 
   async findOne(id: string): Promise<Category> {
-    const category = await this.prisma.category.findUnique({
-      where: { id },
-    });
+    try {
+      const category = await this.prisma.category.findUnique({
+        where: { id },
+      });
 
-    if (!category) {
-      throw new NotFoundException('Categoria não encontrada');
+      if (!category) {
+        throw new NotFoundException('Categoria não encontrada');
+      }
+
+      return category;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException('Erro ao buscar categoria', 500);
     }
-
-    return category;
   }
 
   async update(
     id: string,
     data: UpdateCategoryDto,
   ): Promise<Category> {
-    await this.findOne(id);
+    try {
+      await this.findOne(id);
 
-    return this.prisma.category.update({
-      where: { id },
-      data,
-    });
+      return await this.prisma.category.update({
+        where: { id },
+        data,
+      });
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException('Erro ao atualizar categoria', 500);
+    }
   }
 
   async remove(id: string): Promise<Category> {
-    await this.findOne(id);
+    try {
+      await this.findOne(id);
 
-    return this.prisma.category.delete({
-      where: { id },
-    });
+      return await this.prisma.category.delete({
+        where: { id },
+      });
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException('Erro ao remover categoria', 500);
+    }
   }
 }

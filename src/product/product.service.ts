@@ -1,6 +1,7 @@
 import {
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 
 import { CreateProductDto } from './dto/create-product.dto';
@@ -45,9 +46,8 @@ export class ProductService {
 
   async findAll(): Promise<Product[]> {
     return this.prisma.product.findMany({
-      include: {
-        category: true,
-      },
+      where: { active: true },
+      include: { category: true },
     });
   }
 
@@ -57,7 +57,7 @@ export class ProductService {
       include: { category: true },
     });
 
-    if (!product) {
+    if (!product || !product.active) {
       throw new NotFoundException('Produto não encontrado');
     }
 
@@ -72,13 +72,29 @@ export class ProductService {
       where: { id },
     });
 
-    if (!product) {
+    if (!product || !product.active) {
       throw new NotFoundException('Produto não encontrado');
     }
 
+    // 🔥 validar categoria se vier no update
+    if (data.categoryId) {
+      const category = await this.prisma.category.findUnique({
+        where: { id: data.categoryId },
+      });
+
+      if (!category) {
+        throw new NotFoundException('Categoria não encontrada');
+      }
+    }
+
+    // 🔥 se alterar preço → cria novo price no Stripe
     if (data.price !== undefined) {
+      if (!product.stripeProductId) {
+        throw new BadRequestException('Produto sem vínculo com Stripe');
+      }
+
       const newPrice = await this.stripeService.createPrice(
-        product.stripeProductId!,
+        product.stripeProductId,
         data.price,
       );
 
@@ -98,6 +114,14 @@ export class ProductService {
   }
 
   async remove(id: string): Promise<Product> {
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+    });
+
+    if (!product || !product.active) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+
     return this.prisma.product.update({
       where: { id },
       data: {
